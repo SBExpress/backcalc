@@ -334,6 +334,20 @@
             font-weight: 600;
         }
 
+        .result-row.highlight {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+            border-radius: 4px;
+            padding: 12px !important;
+            margin: 8px 0;
+            border: 2px solid #667eea !important;
+            font-weight: 700;
+        }
+
+        .result-row.highlight strong {
+            color: #667eea;
+            font-size: 1.15em;
+        }
+
         .result-row.total {
             padding-top: 12px;
             margin-top: 8px;
@@ -413,14 +427,130 @@
         }
 
         @media (max-width: 768px) {
+            .backcalc-container {
+                padding: 10px;
+            }
+
+            .backcalc-header {
+                padding: 15px 10px;
+                margin-bottom: 20px;
+            }
+
             .backcalc-header h1 {
-                font-size: 2em;
+                font-size: 1.8em;
+                margin-bottom: 5px;
             }
+
+            .backcalc-header p {
+                font-size: 0.9em;
+            }
+
+            .header-content {
+                flex-direction: column;
+            }
+
+            .logo {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .calculator-panel {
+                padding: 15px;
+            }
+
+            .settings-panel {
+                padding: 15px;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
             .params-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
+
             .results-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .large-input,
+            .param-group input,
+            .param-group select,
+            .setting-group input,
+            .setting-group select {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+
+            .save-btn,
+            .reset-btn,
+            .settings-btn {
+                padding: 14px 18px;
+                font-size: 1em;
+                min-height: 48px;
+            }
+
+            .settings-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .save-btn,
+            .reset-btn {
+                width: 100%;
+            }
+
+            .split-slider {
+                height: 10px;
+            }
+
+            .split-slider::-webkit-slider-thumb {
+                width: 28px;
+                height: 28px;
+            }
+
+            .split-slider::-moz-range-thumb {
+                width: 28px;
+                height: 28px;
+            }
+
+            .breakdown-card {
+                padding: 16px;
+            }
+
+            .result-row {
+                padding: 10px 0;
+                font-size: 1em;
+            }
+
+            .result-row.highlight {
+                padding: 14px;
+                margin: 10px 0;
+            }
+
+            .combined-total {
+                padding: 16px;
+            }
+
+            .total-row,
+            .target-row {
+                padding: 12px 0;
+                font-size: 1.05em;
+            }
+
+            .total-row strong,
+            .target-row strong {
+                font-size: 1.15em;
+            }
+
+            .backcalc-footer {
+                margin-top: 20px;
+                padding: 15px;
+                font-size: 0.8em;
             }
         }
     </style>
@@ -542,7 +672,7 @@
                     laborRate, laborOH, laborProfit, materialAdj, materialOH, materialProfit, materialTax, taxBasis, laborSplit,
                 };
                 localStorage.setItem('backCalcSettings', JSON.stringify(settings));
-                alert('Settings saved!');
+                setShowSettings(false);
             };
 
             const handleResetSettings = () => {
@@ -693,7 +823,7 @@
                                     <div className="results-grid">
                                         <div className="breakdown-card labor-card">
                                             <h3>Labor</h3>
-                                            <div className="result-row"><span>Hours Needed</span><strong>{formatHours(results.laborHours)}</strong></div>
+                                            <div className="result-row highlight"><span>Hours Needed</span><strong>{formatHours(results.laborHours)}</strong></div>
                                             <div className="result-row"><span>Raw Cost</span><span>{formatCurrency(results.rawLaborCost)}</span></div>
                                             <div className="result-row"><span>+ Overhead</span><span>{formatCurrency(results.laborOHAmount)}</span></div>
                                             <div className="result-row"><span>+ Profit</span><span>{formatCurrency(results.laborProfitAmount)}</span></div>
@@ -702,7 +832,7 @@
 
                                         <div className="breakdown-card material-card">
                                             <h3>Material</h3>
-                                            <div className="result-row"><span>Raw Cost</span><span>{formatCurrency(results.rawMaterialCost)}</span></div>
+                                            <div className="result-row highlight"><span>Raw Cost</span><strong>{formatCurrency(results.rawMaterialCost)}</strong></div>
                                             <div className="result-row"><span>+ Adjustment</span><span>{formatCurrency(results.materialAdjAmount)}</span></div>
                                             <div className="result-row"><span>+ Overhead</span><span>{formatCurrency(results.materialOHAmount)}</span></div>
                                             <div className="result-row"><span>+ Profit</span><span>{formatCurrency(results.materialProfitAmount)}</span></div>
