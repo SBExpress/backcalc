@@ -915,18 +915,25 @@
                 const laborSubtotal = rawLaborCost + laborOHAmount + laborProfitAmount;
 
                 // Material: reverse-engineer raw cost
-                // For "tax on raw material only":
-                // materialPortion = (raw + adj) * (1 + OH%) * (1 + Profit%) + (raw + adj) * Tax%
-                // materialPortion = (raw + adj) * [((1 + OH%) * (1 + Profit%)) + Tax%]
                 let rawMaterialCost = 0;
-                if (mTax > 0) {
-                    const divisor = ((1 + mOH) * (1 + mProfit)) + mTax;
-                    rawMaterialCost = materialPortion / divisor;
-                } else {
-                    rawMaterialCost = materialPortion / (1 + mProfit) / (1 + mOH);
-                    if (mAdj > 0) {
-                        rawMaterialCost = rawMaterialCost / (1 + mAdj);
+                let materialTaxAmount = 0;
+
+                if (includeTax && mTax > 0) {
+                    if (taxBasis === 'raw') {
+                        // Tax on raw + adjustment only
+                        // materialPortion = raw * (1 + adj%) * (1 + OH%) * (1 + Profit%) + raw * (1 + adj%) * Tax%
+                        // materialPortion = raw * (1 + adj%) * [((1 + OH%) * (1 + Profit%)) + Tax%]
+                        const divisor = (1 + mAdj) * ((1 + mOH) * (1 + mProfit) + mTax);
+                        rawMaterialCost = materialPortion / divisor;
+                    } else {
+                        // Tax on full (raw + adj + OH + profit)
+                        // materialPortion = raw * (1 + adj%) * (1 + OH%) * (1 + Profit%) * (1 + Tax%)
+                        const divisor = (1 + mAdj) * (1 + mOH) * (1 + mProfit) * (1 + mTax);
+                        rawMaterialCost = materialPortion / divisor;
                     }
+                } else {
+                    // No tax
+                    rawMaterialCost = materialPortion / ((1 + mAdj) * (1 + mOH) * (1 + mProfit));
                 }
 
                 const materialAdjAmount = rawMaterialCost * mAdj;
@@ -934,9 +941,18 @@
                 const materialOHAmount = adjustedMaterial * mOH;
                 const materialProfitAmount = (adjustedMaterial + materialOHAmount) * mProfit;
                 const materialSubtotalBeforeTax = adjustedMaterial + materialOHAmount + materialProfitAmount;
-                const materialTaxAmount = adjustedMaterial * mTax;
-                const materialTotal = materialSubtotalBeforeTax + materialTaxAmount;
 
+                if (includeTax && mTax > 0) {
+                    if (taxBasis === 'raw') {
+                        // Tax only on raw + adjustment
+                        materialTaxAmount = adjustedMaterial * mTax;
+                    } else {
+                        // Tax on full subtotal
+                        materialTaxAmount = materialSubtotalBeforeTax * mTax;
+                    }
+                }
+
+                const materialTotal = materialSubtotalBeforeTax + materialTaxAmount;
                 const combinedTotal = laborSubtotal + materialTotal;
 
                 const round = (num) => Math.round(num * 100) / 100;
@@ -1013,9 +1029,19 @@
 
                     <div className="backcalc-main">
                         <div className="settings-toggle">
-                            <button onClick={() => setShowSettings(!showSettings)} className="settings-btn">
-                                ⚙️ {showSettings ? 'Hide' : 'Settings'}
-                            </button>
+                            <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap', marginBottom: '15px'}}>
+                                <label className="checkbox-label" style={{color: 'white', margin: 0}}>
+                                    <input type="checkbox" checked={includeTax} onChange={(e) => setIncludeTax(e.target.checked)} />
+                                    Tax
+                                </label>
+                                <label className="checkbox-label" style={{color: 'white', margin: 0}}>
+                                    <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
+                                    Dark
+                                </label>
+                                <button onClick={() => setShowSettings(!showSettings)} className="settings-btn">
+                                    ⚙️ {showSettings ? 'Hide' : 'Settings'}
+                                </button>
+                            </div>
                         </div>
 
                         {showSettings && (
@@ -1096,10 +1122,19 @@
                                         <span>Material: {100 - laborSplit}%</span>
                                         <span>Labor: {laborSplit}%</span>
                                     </div>
-                                    <div className="split-controls">
+                                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'center', marginBottom: '12px'}}>
+                                        <div style={{textAlign: 'left'}}>
+                                            <label style={{fontSize: '0.85em', fontWeight: '600', display: 'block', marginBottom: '6px'}}>Material %</label>
+                                            <input type="number" min="0" max="100" value={100 - laborSplit} onChange={(e) => setLaborSplit(Math.max(0, Math.min(100, 100 - (parseFloat(e.target.value) || 0))))} style={{width: '70px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9em'}} />
+                                        </div>
+                                        <div style={{textAlign: 'right'}}>
+                                            <label style={{fontSize: '0.85em', fontWeight: '600', display: 'block', marginBottom: '6px'}}>Labor %</label>
+                                            <input type="number" min="0" max="100" value={laborSplit} onChange={(e) => setLaborSplit(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))} style={{width: '70px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9em'}} />
+                                        </div>
+                                    </div>
+                                    <div className="split-controls" style={{justifyContent: 'center', marginBottom: '12px'}}>
                                         <button className="split-button" onClick={() => adjustSplit(-5)}>−</button>
-                                        <input type="number" min="0" max="100" value={laborSplit} onChange={(e) => setLaborSplit(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))} className="split-input" />
-                                        <span>%</span>
+                                        <span style={{fontWeight: '600', minWidth: '80px', textAlign: 'center'}}>Split</span>
                                         <button className="split-button" onClick={() => adjustSplit(5)}>+</button>
                                     </div>
                                     <input type="range" min="0" max="100" value={laborSplit} onChange={(e) => setLaborSplit(parseFloat(e.target.value))} className="split-slider" />
